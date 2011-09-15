@@ -9,42 +9,54 @@
 	slideshow = function(photos) {
 		var container = document.createElement('div'),
 			len = photos.length,
+			positionImage,
 			currentImage,
-			showNextImage;
+			currentIndex = 0,
+			nextImage,
+			showNextImage,
+			showImageNow,
+			timeoutTransitionComplete, timeoutShowNextImage;
 
 		if (RANDOMIZE_ORDER) {
 			photos.sort(function() { return 0.5 - Math.random(); });
 		}
 
-		showNextImage = function(index) {
-			var nextImage, nextImageImg, transitionComplete, imageLoaded;
-
-			if (index >= len) {
-				index = 0;
+		// Scale and center an image
+		positionImage = function(img) {
+			var h, w, t, l, ratio;
+			ratio = img.height / img.width;
+			w = (!SCALE_SMALL_IMAGES_UP && img.width < window.innerWidth) ? img.width : window.innerWidth;
+			h = w * ratio;
+			if (h > window.innerHeight) {
+				h = window.innerHeight;
+				w = h / ratio;
 			}
-			console.log('Loading ' + photos[index]);
+			t = (window.innerHeight - h) / 2;
+			l = (window.innerWidth - w) / 2;
+			img.style.width  = w.toString() + 'px';
+			img.style.height = h.toString() + 'px';
+			img.style.top    = t.toString() + 'px';
+			img.style.left   = l.toString() + 'px';
+		};
+
+		// Show the next image
+		showNextImage = function() {
+			var nextImageImg, transitionComplete, imageLoaded;
+			timeoutShowNextImage = null;
+			currentIndex += 1;
+			if (currentIndex >= len) {
+				currentIndex = 0;
+			}
+			console.log('Loading ' + photos[currentIndex]);
 
 			imageLoaded = function(e) {
-				var h, w, t, l, ratio;
 				nextImageImg.removeEventListener('load', imageLoaded, false);
-				// Scale and position the image
-				ratio = nextImageImg.height / nextImageImg.width;
-				w = (!SCALE_SMALL_IMAGES_UP && nextImageImg.width < window.innerWidth) ? nextImageImg.width : window.innerWidth;
-				h = w * ratio;
-				if (h > window.innerHeight) {
-					h = window.innerHeight;
-					w = h / ratio;
-				}
-				t = (window.innerHeight - h) / 2;
-				l = (window.innerWidth - w) / 2;
-				nextImageImg.style.width  = w.toString() + 'px';
-				nextImageImg.style.height = h.toString() + 'px';
-				nextImageImg.style.top    = t.toString() + 'px';
-				nextImageImg.style.left   = l.toString() + 'px';
+				positionImage(nextImageImg);
 				nextImage.style.opacity = '1';
 			};
 
 			transitionComplete = function() {
+				timeoutTransitionComplete = null;
 				if (currentImage) {
 					container.removeChild(currentImage);
 				}
@@ -53,24 +65,72 @@
 				currentImage = nextImage;
 				nextImage = null;
 
-				setTimeout(function() {
-					showNextImage(index + 1);
-				}, DURATION_PER_PHOTO);
+				timeoutShowNextImage = setTimeout(showNextImage, DURATION_PER_PHOTO);
 			};
 
 			// Create a DIV holder for the image (with a black background)
 			nextImage = document.createElement('div');
 			nextImage.style.opacity = '0';
 			nextImage.style.zIndex = '20';
-			setTimeout(transitionComplete, 2000);
+			timeoutTransitionComplete = setTimeout(transitionComplete, 2000);
 
 			// Create the image itself
 			nextImageImg = document.createElement('img');
-			nextImageImg.src = photos[index];
 			nextImageImg.addEventListener('load', imageLoaded, false);
+			nextImageImg.src = photos[currentIndex];
 			nextImage.appendChild(nextImageImg);
 			container.appendChild(nextImage);
 		};
+
+		// Show an image right now without a transition
+		showImageNow = function() {
+			var nextImageImg, imageLoaded;
+			console.log('Going straight to ' + photos[currentIndex]);
+
+			if (timeoutTransitionComplete) {
+				clearTimeout(timeoutTransitionComplete);
+				timeoutTransitionComplete = null;
+			}
+			if (timeoutShowNextImage) {
+				clearTimeout(timeoutShowNextImage);
+				timeoutShowNextImage = null;
+			}
+
+			imageLoaded = function(e) {
+				nextImageImg.removeEventListener('load', imageLoaded, false);
+				positionImage(nextImageImg);
+				timeoutShowNextImage = setTimeout(showNextImage, DURATION_PER_PHOTO);
+			};
+
+			nextImageImg = document.createElement('img');
+			nextImageImg.addEventListener('load', imageLoaded, false);
+			nextImageImg.src = photos[currentIndex];
+			if (nextImage) {
+				container.removeChild(nextImage);
+				nextImage = null;
+			}
+			currentImage.removeChild(currentImage.firstChild);
+			currentImage.appendChild(nextImageImg);
+		};
+
+		document.addEventListener('keyup', function(e) {
+			//console.log(e);
+			if (e.keyCode === 37) {
+				// Left arrow key
+				currentIndex -= 1;
+				if (currentIndex < 0) {
+					currentIndex = photos.length - 1;
+				}
+				showImageNow();
+			} else if (e.keyCode === 39) {
+				// Right arrow key
+				currentIndex += 1;
+				if (currentIndex >= photos.length) {
+					currentIndex = 0;
+				}
+				showImageNow();
+			}
+		}, false);
 
 		container.id = 'slideshow';
 		document.body.appendChild(container);
