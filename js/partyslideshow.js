@@ -40,8 +40,6 @@
 			};
 
 			transitionComplete = function() {
-				nextImage.removeEventListener('transitionend', transitionComplete, false);
-				nextImage.removeEventListener('webkitTransitionEnd', transitionComplete, false);
 				if (currentImage) {
 					container.removeChild(currentImage);
 				}
@@ -59,8 +57,7 @@
 			nextImage = document.createElement('div');
 			nextImage.style.opacity = '0';
 			nextImage.style.zIndex = '20';
-			nextImage.addEventListener('transitionend', transitionComplete, false);
-			nextImage.addEventListener('webkitTransitionEnd', transitionComplete, false);
+			setTimeout(transitionComplete, 2000);
 
 			// Create the image itself
 			nextImageImg = document.createElement('img');
