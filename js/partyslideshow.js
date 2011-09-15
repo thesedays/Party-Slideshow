@@ -3,6 +3,7 @@
 (function() {
 	var SCALE_SMALL_IMAGES_UP = true,
 		DURATION_PER_PHOTO = 5 * 1000,
+		RANDOMIZE_ORDER = true,
 		slideshow, fileselect;
 
 	slideshow = function(photos) {
@@ -10,6 +11,10 @@
 			len = photos.length,
 			currentImage,
 			showNextImage;
+
+		if (RANDOMIZE_ORDER) {
+			photos.sort(function() { return 0.5 - Math.random(); });
+		}
 
 		showNextImage = function(index) {
 			var nextImage, nextImageImg, transitionComplete, imageLoaded;
