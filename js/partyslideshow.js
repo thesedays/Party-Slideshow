@@ -99,11 +99,13 @@
 			imageLoaded = function(e) {
 				nextImageImg.removeEventListener('load', imageLoaded, false);
 				positionImage(nextImageImg);
+				nextImageImg.style.visibility = 'visible';
 				timeoutShowNextImage = setTimeout(showNextImage, DURATION_PER_PHOTO);
 			};
 
 			nextImageImg = document.createElement('img');
 			nextImageImg.addEventListener('load', imageLoaded, false);
+			nextImageImg.style.visibility = 'hidden';
 			nextImageImg.src = photos[currentIndex];
 			if (nextImage) {
 				container.removeChild(nextImage);
@@ -115,6 +117,9 @@
 
 		document.addEventListener('keyup', function(e) {
 			//console.log(e);
+			if (!currentImage) {
+				return;
+			}
 			if (e.keyCode === 37) {
 				// Left arrow key
 				currentIndex -= 1;
